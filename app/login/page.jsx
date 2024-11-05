@@ -2,11 +2,46 @@
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify';
+import axios from 'axios';
 function page() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const handleSubmit = async() => {
+  const handleSubmit = async(e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post("/api/auth/login", {
+        email: email,
+        password: password
+      })
+      console.log("Here is Response : ", response)
+     
+      if (response.status == 200) {
+        localStorage.setItem('token',response.data.token)
+        toast.success(response.data.message || "Login Done Successfully ", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined
+        })
+      }
+    } catch (error) {
+      toast.error(`User or Password something is wrong `, {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined
+      })
+    }
+    
+    setEmail("");
+    setPassword("");
     
   }
   return (
@@ -20,7 +55,7 @@ function page() {
         <input value={password} onChange={(e) => setPassword(e.target.value)} type="text" className='bg-black required text-white outline-none  border-b border-white p-4 mb-4
          '  placeholder='Enter your Password : ' />
         <button className='bg-black text-white hover:bg-white hover:text-black transition-all duration-200
-         border  py-2 px-5 rounded-lg'>Submit</button>
+         border  py-2 px-5 rounded-lg' onClick={(e)=>handleSubmit(e)}>Submit</button>
       </div>
     </div>
   )
