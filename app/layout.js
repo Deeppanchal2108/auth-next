@@ -1,7 +1,8 @@
 
 import "./globals.css";
 
-
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata = {
   title: "Authentication with Next js",
@@ -13,7 +14,16 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body
       >
-        {children}
+        
+        <ToastContainer position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          pauseOnFocusLoss />
+        <main>{children}</main>
+        
       </body>
     </html>
   );

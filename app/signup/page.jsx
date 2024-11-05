@@ -3,6 +3,7 @@ import React from 'react'
 import { useState } from 'react'
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 function page() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -18,11 +19,29 @@ function page() {
       }) 
       console.log("Response Data : ", resp) 
       
-      if (resp.status==200) {
+      if (resp.status == 200) {
+        toast.success(resp.data.message || "Done SignUp", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined
+        })
         router.push("/login");
       }
 
     } catch (error) {
+      toast.error(resp.data.message || "Something went wrong while sign up", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined
+      })
 console.log("Something went wrong while making request ",error) 
     }
     setUsername("");

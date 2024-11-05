@@ -1,10 +1,14 @@
 "use client"
 import React from 'react'
 import { useEffect, useState } from 'react'
+import { toast } from 'react-toastify';
 function page() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const handleSubmit = async() => {
+    
+  }
   return (
     <div className='h-screen w-full bg-white flex justify-center items-center'>
       <div className='bg-black h-[400px] w-[300px] rounded-md px-8'>
