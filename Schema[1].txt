@@ -1,0 +1,346 @@
+Defining the Schema for the Project 
+
+// For chat bot and know Ur food  (mongo Db)
+// For emergency doctor mongo db geospatial 
+
+
+
+Role {
+Admin,
+Patient, Doctor
+}
+
+AppointmentType{
+Online , offline
+}
+
+AppointmentStatus {
+  PENDING
+  COMPLETED
+  CANCELLED_BY_PATIENT
+  CANCELLED_BY_DOCTOR
+}
+
+ SlotStatus {
+  AVAILABLE
+  BOOKED
+}
+
+
+ User {
+  id           
+  name         
+  email        
+  password     
+  role        
+  phone        
+  address      
+  profileImage 
+  createdAt    
+  updatedAt    
+
+  patient  Patient?
+  doctor   Doctor?
+
+}
+
+
+ Patient {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  gender    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user              User                @relation(fields: [userId], references: [id])
+  medicalRecords    MedicalRecord[]
+  medications       Medication[]
+  prescriptions     Prescription[]
+  appointments      Appointment[]
+ 
+
+  @@map("patients")
+}
+
+
+model Doctor {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  gender     String
+  rating     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id])
+  medicalRecords   MedicalRecord[]
+  prescriptions    Prescription[]
+  specialties      Speciality[]
+  appointments     Appointment[]
+  appointmentSlots AppointmentSlot[]
+
+  @@map("doctors")
+}
+
+//Doctor Speciality
+model Speciality {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  doctors Doctor[]
+
+  @@map("specialties")
+}
+
+
+
+
+
+model MedicalRecord {
+  id          Int      @id @default(autoincrement())
+  patientId   Int
+  doctorId    Int?
+  name        String
+  description String?
+  recordDate  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patient Patient               @relation(fields: [patientId], references: [id])
+  doctor  Doctor?               @relation(fields: [doctorId], references: [id])
+  files   MedicalRecordFile[]
+  details MedicalRecordDetail[]
+
+  @@unique([patientId, recordDate, name])
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("medical_records")
+}
+
+model MedicalRecordFile {
+  id              Int      @id @default(autoincrement())
+  name            String
+  url             String
+  medicalRecordId Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@map("medical_record_files")
+}
+
+model MedicalRecordDetail {
+  id                     Int      @id @default(autoincrement())
+  medicalRecordId        Int
+  result                 Float
+  examinationReferenceId Int
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  medicalRecord MedicalRecord      @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+  examination   MedicalExamination @relation(fields: [examinationReferenceId], references: [id], onDelete: Restrict)
+
+  @@unique([medicalRecordId, examinationReferenceId])
+  @@map("medical_record_details")
+}
+
+model MedicalExamination {
+  id               Int      @id @default(autoincrement())
+  name             String
+  unit             String?
+  gender           String?
+  normalRangeStart Float?
+  normalRangeEnd   Float?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  details MedicalRecordDetail[]
+
+  @@map("medical_examinations")
+}
+
+model Prescription {
+  id            Int      @id @default(autoincrement())
+  patientId     Int
+  doctorId      Int // doctor id --> get from user id
+  appointmentId Int?     @unique
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id])
+  doctor      Doctor       @relation(fields: [doctorId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+  medicines   Medication[] // add patient id from prescription to medicine using loop
+  notes       String?
+
+  @@map("prescriptions")
+}
+
+model Medication {
+  id             Int      @id @default(autoincrement())
+  patientId      Int
+  prescriptionId Int?
+  name           String
+  dosage         String
+  frequency      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patient      Patient          @relation(fields: [patientId], references: [id])
+  prescription Prescription?    @relation(fields: [prescriptionId], references: [id])
+  timesToTake  MedicationTime[]
+  source       MedicineSource
+
+  @@map("medications")
+}
+
+model MedicationTime {
+  id           Int      @id @default(autoincrement())
+  time         String
+  medicationId Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  medication Medication @relation(fields: [medicationId], references: [id])
+
+  @@unique([time, medicationId])
+  @@map("medication_times")
+}
+
+
+
+
+model Appointment {
+  id             Int               @id @default(autoincrement())
+  patientId      Int
+  doctorId       Int
+  date           String
+  type           AppointmentType
+  location       String?
+  prescriptionId Int?
+  videoLink      String?
+  status         AppointmentStatus
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  patient           Patient          @relation(fields: [patientId], references: [id])
+  doctor            Doctor           @relation(fields: [doctorId], references: [id])
+  prescription      Prescription?
+  appointmentSlot   AppointmentSlot? @relation(fields: [appointmentSlotId], references: [id])
+  appointmentSlotId Int?             @unique
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("appointments")
+}
+
+model AppointmentSlot {
+  id          Int             @id @default(autoincrement())
+  doctorId    Int
+  date        String
+  startTime   String
+  endTime     String
+  status      SlotStatus
+  type        AppointmentType
+  bufferTime  Int?            // Optional buffer time in minutes
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  doctor      Doctor          @relation(fields: [doctorId], references: [id])
+  appointment Appointment?
+
+  @@index([doctorId])
+  @@index([date, startTime, endTime])
+  @@map("appointment_slots")
+}
+
+
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  CASH
+  ONLINE_BANKING
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id            Int       @id @default(autoincrement())  // Unique payment ID
+  patientId     Int       // Patient making the payment
+  doctorId      Int       // Doctor receiving the payment
+  appointmentId Int       // Appointment associated with the payment
+  amount        Float     // Payment amount
+  paymentMethod PaymentMethod // Method of payment (e.g., credit card, PayPal, etc.)
+  status        PaymentStatus  // Payment status (e.g., pending, completed, failed)
+  paymentDate   DateTime  @default(now())  // Timestamp when the payment was made
+  createdAt     DateTime  @default(now())  // Record creation timestamp
+  updatedAt     DateTime  @updatedAt // Timestamp when the record was last updated
+
+  patient       Patient   @relation(fields: [patientId], references: [id])
+  doctor        Doctor    @relation(fields: [doctorId], references: [id])
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([appointmentId])
+  @@map("payments")
+}
+
+
+
+// Mongo schema 
+// models/User.js (Mongoose)
+
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema(
+  {
+    clerkUserId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    latitude: {
+      type: Number,
+      required: false,
+    },
+    longitude: {
+      type: Number,
+      required: false,
+    },
+    city: {
+      type: String,
+      required: false,
+    },
+    region: {
+      type: String,
+      required: false,
+    },
+    country: {
+      type: String,
+      required: false,
+    },
+    role: {
+      type: String,
+      enum: ['doctor', 'patient'],
+      default: 'patient',  // default role
+    },
+  },
+  {
+    timestamps: true, // automatically adds createdAt and updatedAt fields
+  }
+);
+
+module.exports = mongoose.model('User', userSchema);
+
